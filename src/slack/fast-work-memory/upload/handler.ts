@@ -203,15 +203,17 @@ export function създайОбработчик(
 
     /**
      * Качва файл от буфер
+     * @param mimeТип - Опционален MIME тип за определяне на формат (полезно при URL без разширение)
      */
     async качиБуфер(
       буфер: Buffer,
       имеНаФайл: string,
       опции: Partial<ОпцииЗаКачване> = {},
+      mimeТип?: string,
     ): Promise<РезултатОтКачване> {
       общоКачвания++;
 
-      const формат = определиФормат(имеНаФайл);
+      const формат = определиФормат(имеНаФайл, mimeТип);
       const валидация = валидирайФайл(буфер.length, формат, настройки);
 
       if (!валидация.валиден) {
@@ -303,15 +305,18 @@ export function създайОбработчик(
         }
 
         const contentType = отговор.headers.get("content-type") || "";
+        // Извлича основния MIME тип (без charset и други параметри)
+        const mimeТип = contentType.split(";")[0].trim();
         const urlПът = new URL(url).pathname;
         const имеНаФайл = basename(urlПът) || "downloaded-file";
 
         const буфер = Buffer.from(await отговор.arrayBuffer());
 
+        // Подава MIME типа за URL-и без разширение
         return this.качиБуфер(буфер, имеНаФайл, {
           ...опции,
           източник: опции.източник ?? "качване",
-        });
+        }, mimeТип);
       } catch (грешка) {
         return {
           успех: false,
